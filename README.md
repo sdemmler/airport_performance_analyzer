@@ -66,6 +66,7 @@ jupyter lab
 
 ## 👥 Team
 
+Sebastian Demmler (sdemmler)
 André Janßen (andre-janssen)
 
 ---
@@ -73,5 +74,3 @@ André Janßen (andre-janssen)
 ## 📄 Lizenz
 
 MIT
-
-*Ergänzen.*

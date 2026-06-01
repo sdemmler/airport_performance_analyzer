@@ -64,6 +64,14 @@ jupyter lab
 
 ---
 
-## 👥 Team & Lizenz
+## 👥 Team
+
+André Janßen (andre-janssen)
+
+---
+
+## 📄 Lizenz
+
+MIT
 
 *Ergänzen.*

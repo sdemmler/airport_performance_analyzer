@@ -1,4 +1,3 @@
-# European airport perfomance analyzer
 # ✈️ European Airport Delay Analysis
 
 Datenanalyse- und Machine-Learning-Projekt zu **ATFM-Verspätungen an europäischen Flughäfen**.

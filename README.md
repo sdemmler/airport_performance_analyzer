@@ -47,7 +47,7 @@ Die Analyse beantwortet also *nicht* die Frage „Wie viel Verspätung erlebt de
 
 ## 🛠️ Tech Stack
 
-Python · pandas · scikit-learn · xgboost · matplotlib / plotly · Jupyter
+Python · postgresSQL · docker · pandas · streamlit · scikit-learn · xgboost · matplotlib / plotly · Jupyter
 
 ---
 

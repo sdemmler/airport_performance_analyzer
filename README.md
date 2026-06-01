@@ -67,6 +67,7 @@ jupyter lab
 ## 👥 Team
 
 Sebastian Demmler (sdemmler)
+
 André Janßen (andre-janssen)
 
 ---

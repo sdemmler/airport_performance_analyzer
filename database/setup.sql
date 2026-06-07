@@ -13,14 +13,38 @@
 -- Quelle: opdi/airports.csv
 -- Link: https://davidmegginson.github.io/ourairports-data/airports.csv
 
--- TODO [Sebastian]
-
+CREATE TABLE dim_airport (
+    id                  INTEGER             NOT NULL,
+    ident               CHAR(4)             PRIMARY KEY,
+    type                VARCHAR(20)         NOT NULL,
+    name                VARCHAR(20)         NOT NULL,
+    latitude_deg        DECIMAL             NOT NULL,
+    longitude_deg       DECIMAL             NOT NULL,
+    continent           CHAR(2)             NOT NULL,
+    iso_country         CHAR(2)             NOT NULL,
+    iso_region          VARCHAR(20)         NOT NULL,
+    municipality        VARCHAR(20),
+    scheduled_service   BOOLEAN             NOT NULL,
+    icao_code           CHAR(4),
+    iata_code           CHAR(3),
+    gps_code            CHAR(4),
+    local_code          VARCHAR(7)
+);
 
 -- ── dim_runway ──────────────────────────────────────────────
 -- Quelle: opdi/runways.csv
 -- Link: https://davidmegginson.github.io/ourairports-data/runways.csv
 
--- TODO [Sebastian]
+CREATE TABLE dim_runway (
+    id                  INTEGER         PRIMARY KEY,
+    airport_ref         INTEGER         NOT NULL,
+    airport_ident       VARCHAR(10)     NOT NULL,
+    length_ft           DECIMAL,
+    width_ft            DECIMAL,
+    surface             VARCHAR(10),
+    lighted             BOOLEAN         NOT NULL,
+    closed              BOOLEAN         NOT NULL
+);
 
 
 -- ── dim_date ────────────────────────────────────────────────
@@ -42,7 +66,11 @@ CREATE TABLE dim_date (
 -- Quelle: openflights/airlines.dat
 -- Link: https://raw.githubusercontent.com/jpatokal/openflights/master/data/airports.dat
 
--- TODO [Sebastian]
+CREATE TABLE dim_airline (
+    icao                CHAR(3)             PRIMARY KEY,
+    name                varchar(50),
+    country             varchar(20)         
+);
 
 
 -- ── dim_entity_region ───────────────────────────────────────

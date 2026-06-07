@@ -238,3 +238,8 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# Data Folder als dummy erlauben, Data wird nicht mit gepusht
+data/**
+!data/.gitkeep
+!data/*/.gitkeep

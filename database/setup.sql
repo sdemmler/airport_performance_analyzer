@@ -3,6 +3,31 @@
 -- Airport-Performance-Analyzer Datenbank (vollständiges Schema)
 -- ============================================================
 
+BEGIN;
+
+-- ============================================================
+-- 0. Drop Tables
+-- Reihenfolge: erst Faktentabellen, dann Dimensionstabellen
+-- (FK-Abhängigkeiten beachten)
+-- ============================================================
+
+-- ── Faktentabellen ──────────────────────────────────────────
+DROP TABLE IF EXISTS fact_weather;
+DROP TABLE IF EXISTS fact_enroute_delay;
+DROP TABLE IF EXISTS fact_airport_traffic;
+DROP TABLE IF EXISTS fact_airport_delay;
+DROP TABLE IF EXISTS fact_measurement;
+DROP TABLE IF EXISTS fact_flight_event;
+DROP TABLE IF EXISTS fact_flight;
+
+-- ── Dimensionstabellen ──────────────────────────────────────
+DROP TABLE IF EXISTS dim_entity_region;
+DROP TABLE IF EXISTS dim_airline;
+DROP TABLE IF EXISTS dim_date;
+DROP TABLE IF EXISTS dim_runway;
+DROP TABLE IF EXISTS dim_airport;
+
+
 -- ============================================================
 -- 1. DIMENSIONSTABELLEN
 --    Reihenfolge: dim_airport zuerst, da andere
@@ -97,21 +122,49 @@ CREATE TABLE dim_entity_region (
 -- Quelle: opdi/flight_list/flight_list_YYYYMM.parquet
 -- Link: https://www.opdi.aero/flight-list-data.html
 
--- TODO [Sebastian]
+CREATE TABLE fact_flight (
+    id                  INT          PRIMARY KEY,
+    icao24              CHAR(6)         NOT NULL,
+    flt_id              VARCHAR(10),
+    dof                 DATE            NOT NULL    REFERENCES dim_date(date_id),
+    adep                CHAR(4)                     REFERENCES dim_airport(ident),
+    ades                CHAR(4)                     REFERENCES dim_airport(ident),
+    model               VARCHAR(50),
+    typecode            CHAR(4),
+    icao_operator       CHAR(3)                     REFERENCES dim_airline(icao),
+    first_seen_date     DATE,
+    first_seen_time     TIME,
+    last_seen_date      DATE,
+    last_seen_time      TIME
+);
 
 
 -- ── fact_flight_event ───────────────────────────────────────
 -- Quelle: opdi/flight_events/flight_events_YYYYMMDD_YYYYMMDD.parquet
 -- Link: https://www.opdi.aero/flight-event-data.html
 
--- TODO [Sebastian]
+CREATE TABLE fact_flight_event (
+    id                  INT             PRIMARY KEY,
+    flight_id           INT             NOT NULL    REFERENCES fact_flight(id),
+    type                VARCHAR(20)     NOT NULL,
+    event_date          DATE            NOT NULL    REFERENCES dim_date(date_id),
+    event_time          TIME            NOT NULL,
+    longitude           DECIMAL         NOT NULL,
+    latitude            DECIMAL         NOT NULL,
+    altitude            DECIMAL
+);
 
 
 -- ── fact_measurement ────────────────────────────────────────
 -- Quelle: opdi/measurements/measurements_YYYYMMDD_YYYYMMDD.parquet
 -- Link: https://www.opdi.aero/measurement-data.html
 
--- TODO [Sebastian]
+CREATE TABLE fact_measurement (
+    id                  VARCHAR(30)     PRIMARY KEY,
+    event_id            VARCHAR(30)     NOT NULL    REFERENCES fact_flight_event(id),
+    type                VARCHAR(50),
+    value               DECIMAL
+);
 
 
 -- ── fact_airport_delay  ──────────────────────────────────────
@@ -261,3 +314,6 @@ FROM GENERATE_SERIES(
     '2026-12-31'::DATE,
     '1 day'::INTERVAL
 ) AS d;
+
+
+COMMIT;

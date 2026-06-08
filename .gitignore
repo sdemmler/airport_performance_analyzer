@@ -241,5 +241,11 @@ logs/
 
 # Data Folder als dummy erlauben, Data wird nicht mit gepusht
 data/**
-!data/.gitkeep
+
+# Unterordner-Ebenen explizit erlauben
+!data/*/
+!data/*/*/
+!data/*/*/*/
+
+# .gitkeep-Dateien erlauben
 !data/**/.gitkeep

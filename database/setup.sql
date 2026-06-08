@@ -118,17 +118,17 @@ CREATE TABLE dim_entity_region (
 -- Granularität: Land × Datum × Feiertagsname
 
 CREATE TABLE dim_public_holidays (
-    country_code        CHAR(2)             NOT NULL        REFERENCES dim_airport(iso_country), -- ISO 3166-1 alpha-2, Join mit dim_airport
+    country_code        CHAR(2)             REFERENCES dim_airport(iso_country), -- ISO 3166-1 alpha-2, Join mit dim_airport
     country_name        VARCHAR(60)         NOT NULL,
     year                SMALLINT            NOT NULL,
     date                DATE                NOT NULL        REFERENCES dim_date(date_id),
     name                VARCHAR(100)        NOT NULL,
-    local_name          VARCHAR(100),
-    is_global           BOOLEAN,
+    local_name          VARCHAR(100)        NOT NULL,
+    is_global           BOOLEAN             NOT NULL,
     subdivision_code    VARCHAR(10),                        -- Bundesland
-    types               VARCHAR(30),
-    fixed               BOOLEAN,
-    launch_year         SMALLINT,
+    types               VARCHAR(30)         NOT NULL,
+    fixed               BOOLEAN             NOT NULL,
+    launch_year         SMALLINT            NOT NULL,
 
     PRIMARY KEY (country_code, date, name)
 );
@@ -144,8 +144,8 @@ CREATE TABLE dim_school_holidays (
     name                VARCHAR(100)        NOT NULL,
     start_date          DATE                NOT NULL        REFERENCES dim_date(date_id),
     end_date            DATE                NOT NULL        REFERENCES dim_date(date_id),
-    type                VARCHAR(30),
-    nationwide          BOOLEAN,
+    type                VARCHAR(30)         NOT NULL,
+    nationwide          BOOLEAN             NOT NULL,
     subdivision_code    VARCHAR(10),                        -- Bundesland
     subdivision_name    VARCHAR(60),                        -- Bundesland
 

@@ -42,15 +42,15 @@ DROP TABLE IF EXISTS dim_airport;
 
 CREATE TABLE dim_airport (
     id                  INTEGER             NOT NULL,
-    ident               CHAR(4)             PRIMARY KEY,
+    ident               CHAR(10)            PRIMARY KEY,
     type                VARCHAR(20)         NOT NULL,
-    name                VARCHAR(20)         NOT NULL,
+    name                VARCHAR(100)        NOT NULL,
     latitude_deg        DECIMAL             NOT NULL,
     longitude_deg       DECIMAL             NOT NULL,
     continent           CHAR(2)             NOT NULL,
     iso_country         CHAR(2)             NOT NULL,
     iso_region          VARCHAR(20)         NOT NULL,
-    municipality        VARCHAR(20),
+    municipality        VARCHAR(100),
     scheduled_service   BOOLEAN             NOT NULL,
     icao_code           CHAR(4),
     iata_code           CHAR(3),
@@ -68,7 +68,7 @@ CREATE TABLE dim_runway (
     airport_ident       VARCHAR(10)     NOT NULL    REFERENCES dim_airport(ident),
     length_ft           DECIMAL,
     width_ft            DECIMAL,
-    surface             VARCHAR(10),
+    surface             VARCHAR(20),
     lighted             BOOLEAN         NOT NULL,
     closed              BOOLEAN         NOT NULL
 );
@@ -95,8 +95,8 @@ CREATE TABLE dim_date (
 
 CREATE TABLE dim_airline (
     icao                CHAR(3)             PRIMARY KEY,
-    name                varchar(50),
-    country             varchar(20)         
+    name                varchar(100),
+    country             varchar(60)         
 );
 
 
@@ -118,7 +118,7 @@ CREATE TABLE dim_entity_region (
 -- Granularität: Land × Datum × Feiertagsname
 
 CREATE TABLE dim_public_holidays (
-    country_code        CHAR(2)             REFERENCES dim_airport(iso_country), -- ISO 3166-1 alpha-2, Join mit dim_airport
+    country_code        CHAR(2),            -- ISO 3166-1 alpha-2, Join mit dim_airport
     country_name        VARCHAR(60)         NOT NULL,
     year                SMALLINT            NOT NULL,
     date                DATE                NOT NULL        REFERENCES dim_date(date_id),
@@ -169,8 +169,8 @@ CREATE TABLE fact_flight (
     icao24              CHAR(6)         NOT NULL,
     flt_id              VARCHAR(10),
     dof                 DATE            NOT NULL    REFERENCES dim_date(date_id),
-    adep                CHAR(4)                     REFERENCES dim_airport(ident),
-    ades                CHAR(4)                     REFERENCES dim_airport(ident),
+    adep                VARCHAR(4)                     REFERENCES dim_airport(ident),
+    ades                VARCHAR(4)                     REFERENCES dim_airport(ident),
     model               VARCHAR(50),
     typecode            CHAR(4),
     icao_operator       CHAR(3)                     REFERENCES dim_airline(icao),
@@ -187,7 +187,7 @@ CREATE TABLE fact_flight (
 
 CREATE TABLE fact_flight_event (
     id                  BIGINT          PRIMARY KEY,
-    flight_id           INT             NOT NULL    REFERENCES fact_flight(id),
+    flight_id           BIGINT          NOT NULL    REFERENCES fact_flight(id),
     type                VARCHAR(20)     NOT NULL,
     event_date          DATE            NOT NULL    REFERENCES dim_date(date_id),
     event_time          TIME            NOT NULL,
@@ -202,8 +202,8 @@ CREATE TABLE fact_flight_event (
 -- Link: https://www.opdi.aero/measurement-data.html
 
 CREATE TABLE fact_measurement (
-    id                  VARCHAR(30)     PRIMARY KEY,
-    event_id            VARCHAR(30)     NOT NULL    REFERENCES fact_flight_event(id),
+    id                  BIGINT     PRIMARY KEY,
+    event_id            BIGINT     NOT NULL    REFERENCES fact_flight_event(id),
     type                VARCHAR(50),
     value               DECIMAL
 );
@@ -219,7 +219,7 @@ CREATE TABLE fact_airport_delay (
     month_num           INTEGER             NOT NULL,
     month_mon           VARCHAR(30),
     flt_date            DATE                REFERENCES dim_date(date_id),
-    apt_icao            CHAR(4)             REFERENCES dim_airport(ident),
+    apt_icao            VARCHAR(4)             REFERENCES dim_airport(ident),
     apt_name            VARCHAR(150),
     state_name          VARCHAR(100),
     flt_arr_1           INTEGER,            -- Anzahl Ankünfte
@@ -261,7 +261,7 @@ CREATE TABLE fact_airport_traffic (
     month_num           INTEGER             NOT NULL,
     month_mon           VARCHAR(30),
     flt_date            DATE                REFERENCES dim_date(date_id),
-    apt_icao            CHAR(4)             REFERENCES dim_airport(ident),
+    apt_icao            VARCHAR(4)          REFERENCES dim_airport(ident),
     apt_name            VARCHAR(150),
     state_name          VARCHAR(100),
 
@@ -320,7 +320,7 @@ CREATE TABLE fact_enroute_delay (
 -- Granularität: Flughafen × Stunde
 
 CREATE TABLE fact_weather (
-    apt_icao            CHAR(4)         REFERENCES dim_airport(ident),
+    apt_icao            VARCHAR(4)         REFERENCES dim_airport(ident),
     ts_hour             TIMESTAMPTZ     NOT NULL,   -- UTC, auf volle Stunde gerundet
     wind_speed          NUMERIC(10,2),              -- km/h
     precipitation       NUMERIC(10,2),              -- mm

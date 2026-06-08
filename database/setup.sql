@@ -165,8 +165,8 @@ CREATE TABLE fact_airport_traffic (
     year                INTEGER             NOT NULL,
     month_num           INTEGER             NOT NULL,
     month_mon           VARCHAR(30),
-    apt_icao            CHAR(4)             REFERENCES dim_airport(ident),
     flt_date            DATE                REFERENCES dim_date(date_id),
+    apt_icao            CHAR(4)             REFERENCES dim_airport(ident),
     apt_name            VARCHAR(150),
     state_name          VARCHAR(100),
 

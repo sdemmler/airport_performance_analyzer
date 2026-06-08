@@ -50,24 +50,69 @@ df_apt_dly.to_sql("fact_airport_delay", engine, if_exists='append', index=False)
 
 
 
-# -------------- Import fact_airport_traffic -------------------------------------
-
-# -- Extract raw data --
-
-
-# -- Transform --
-
-
-# -- Load --
-
-
-
 # -------------- Import fact_enroute_delay -------------------------------------
 
 # -- Extract raw data --
 
+ert_dly_url = "../../data/raw/eurocontrol/enroute_ansp/"
+df_ert_dly = pd.DataFrame()
+
+for y in YEARS_LIST:
+    path = f"{ert_dly_url}ert_dly_ansp_{y}.csv"
+    if not os.path.exists(path):
+        print(f"WARNING: File not found - {path} skipped")
+        continue
+    
+    df_temp = pd.read_csv(path, encoding='latin-1')
+    df_ert_dly = pd.concat([df_ert_dly, df_temp])
 
 # -- Transform --
 
+df_ert_dly["FLT_DATE"] = pd.to_datetime(df_ert_dly["FLT_DATE"], errors="coerce")
+df_ert_dly["FLT_DATE"] = df_ert_dly["FLT_DATE"].dt.tz_localize(None)
+
+df_ert_dly.columns = [col.lower() for col in df_ert_dly.columns]
 
 # -- Load --
+
+# Clear the table before importing
+with engine.connect() as conn:
+    conn.execute(text("TRUNCATE TABLE fact_enroute_delay RESTART IDENTITY CASCADE;"))
+    conn.commit()
+
+df_ert_dly.to_sql("fact_enroute_delay", engine, if_exists='append', index=False)
+
+
+# -------------- Import fact_airport_traffic -----------------------------------
+
+# -- Extract raw data --
+
+apt_tfc_url = "../../data/raw/eurocontrol/airport_traffic/"
+df_apt_tfc = pd.DataFrame()
+
+for y in YEARS_LIST:
+    path = f"{apt_tfc_url}airport_traffic_{y}.csv"
+    if not os.path.exists(path):
+        print(f"WARNING: File not found - {path} skipped")
+        continue
+    
+    df_temp = pd.read_csv(path, encoding='latin-1')
+    df_apt_tfc = pd.concat([df_apt_tfc, df_temp])
+
+# -- Transform --
+
+df_apt_tfc["FLT_DATE"] = pd.to_datetime(df_apt_tfc["FLT_DATE"], errors="coerce")
+df_apt_tfc["FLT_DATE"] = df_apt_tfc["FLT_DATE"].dt.tz_localize(None)
+
+df_apt_tfc = df_apt_tfc.drop(columns=["FLT_DEP_IFR_2", "FLT_ARR_IFR_2", "FLT_TOT_IFR_2"])
+
+df_apt_tfc.columns = [col.lower() for col in df_apt_tfc.columns]
+
+# -- Load --
+
+# Clear the table before importing
+with engine.connect() as conn:
+    conn.execute(text("TRUNCATE TABLE fact_airport_traffic RESTART IDENTITY CASCADE;"))
+    conn.commit()
+
+df_apt_tfc.to_sql("fact_airport_traffic", engine, if_exists='append', index=False)

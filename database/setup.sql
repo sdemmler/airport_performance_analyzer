@@ -21,13 +21,13 @@ DROP TABLE IF EXISTS fact_flight_event;
 DROP TABLE IF EXISTS fact_flight;
 
 -- ── Dimensionstabellen ──────────────────────────────────────
+DROP TABLE IF EXISTS dim_school_holidays;
+DROP TABLE IF EXISTS dim_public_holidays;
 DROP TABLE IF EXISTS dim_entity_region;
 DROP TABLE IF EXISTS dim_airline;
 DROP TABLE IF EXISTS dim_date;
 DROP TABLE IF EXISTS dim_runway;
 DROP TABLE IF EXISTS dim_airport;
-DROP TABLE IF EXISTS dim_public_holidays;
-DROP TABLE IF EXISTS dim_school_holidays;
 
 
 -- ============================================================
@@ -65,7 +65,7 @@ CREATE TABLE dim_airport (
 CREATE TABLE dim_runway (
     id                  INTEGER         PRIMARY KEY,
     airport_ref         INTEGER         NOT NULL,
-    airport_ident       VARCHAR(10)     NOT NULL,
+    airport_ident       VARCHAR(10)     NOT NULL    REFERENCES dim_airport(ident),
     length_ft           DECIMAL,
     width_ft            DECIMAL,
     surface             VARCHAR(10),
@@ -128,7 +128,7 @@ CREATE TABLE dim_public_holidays (
     subdivision_code    VARCHAR(10),                        -- Bundesland
     types               VARCHAR(30)         NOT NULL,
     fixed               BOOLEAN             NOT NULL,
-    launch_year         SMALLINT            NOT NULL,
+    launch_year         SMALLINT,
 
     PRIMARY KEY (country_code, date, name)
 );
@@ -139,7 +139,7 @@ CREATE TABLE dim_public_holidays (
 -- Granularität: Land × Zeitraum × Ferienname
 
 CREATE TABLE dim_school_holidays (
-    country_code        CHAR(2)             NOT NULL        REFERENCES dim_airport(iso_country), -- ISO 3166-1 alpha-2, Join mit dim_airport
+    country_code        CHAR(2)             NOT NULL,       -- ISO 3166-1 alpha-2, Join mit dim_airport
     country_name        VARCHAR(60)         NOT NULL,
     name                VARCHAR(100)        NOT NULL,
     start_date          DATE                NOT NULL        REFERENCES dim_date(date_id),
@@ -165,7 +165,7 @@ CREATE TABLE dim_school_holidays (
 -- Link: https://www.opdi.aero/flight-list-data.html
 
 CREATE TABLE fact_flight (
-    id                  INT          PRIMARY KEY,
+    id                  BIGINT          PRIMARY KEY,
     icao24              CHAR(6)         NOT NULL,
     flt_id              VARCHAR(10),
     dof                 DATE            NOT NULL    REFERENCES dim_date(date_id),
@@ -186,7 +186,7 @@ CREATE TABLE fact_flight (
 -- Link: https://www.opdi.aero/flight-event-data.html
 
 CREATE TABLE fact_flight_event (
-    id                  INT             PRIMARY KEY,
+    id                  BIGINT          PRIMARY KEY,
     flight_id           INT             NOT NULL    REFERENCES fact_flight(id),
     type                VARCHAR(20)     NOT NULL,
     event_date          DATE            NOT NULL    REFERENCES dim_date(date_id),

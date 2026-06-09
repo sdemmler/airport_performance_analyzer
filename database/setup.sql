@@ -42,9 +42,9 @@ DROP TABLE IF EXISTS dim_airport;
 
 CREATE TABLE dim_airport (
     id                  INTEGER             NOT NULL,
-    ident               CHAR(10)            PRIMARY KEY,
+    ident               VARCHAR(10)         PRIMARY KEY,
     type                VARCHAR(20)         NOT NULL,
-    name                VARCHAR(100)        NOT NULL,
+    name                VARCHAR(150)        NOT NULL,
     latitude_deg        DECIMAL             NOT NULL,
     longitude_deg       DECIMAL             NOT NULL,
     continent           CHAR(2)             NOT NULL,
@@ -68,7 +68,7 @@ CREATE TABLE dim_runway (
     airport_ident       VARCHAR(10)     NOT NULL    REFERENCES dim_airport(ident),
     length_ft           DECIMAL,
     width_ft            DECIMAL,
-    surface             VARCHAR(20),
+    surface             VARCHAR(80),
     lighted             BOOLEAN         NOT NULL,
     closed              BOOLEAN         NOT NULL
 );
@@ -94,7 +94,7 @@ CREATE TABLE dim_date (
 -- Link: https://raw.githubusercontent.com/jpatokal/openflights/master/data/airports.dat
 
 CREATE TABLE dim_airline (
-    icao                CHAR(3)             PRIMARY KEY,
+    icao                VARCHAR(5)             PRIMARY KEY,
     name                varchar(100),
     country             varchar(60)         
 );
@@ -123,7 +123,7 @@ CREATE TABLE dim_public_holidays (
     year                SMALLINT            NOT NULL,
     date                DATE                NOT NULL        REFERENCES dim_date(date_id),
     name                VARCHAR(100)        NOT NULL,
-    local_name          VARCHAR(100)        NOT NULL,
+    local_name          VARCHAR(200)        NOT NULL,
     is_global           BOOLEAN             NOT NULL,
     subdivision_code    VARCHAR(10),                        -- Bundesland
     types               VARCHAR(30)         NOT NULL,
@@ -169,8 +169,8 @@ CREATE TABLE fact_flight (
     icao24              CHAR(6)         NOT NULL,
     flt_id              VARCHAR(10),
     dof                 DATE            NOT NULL    REFERENCES dim_date(date_id),
-    adep                VARCHAR(4)                     REFERENCES dim_airport(ident),
-    ades                VARCHAR(4)                     REFERENCES dim_airport(ident),
+    adep                VARCHAR(4)                  REFERENCES dim_airport(ident),
+    ades                VARCHAR(4)                  REFERENCES dim_airport(ident),
     model               VARCHAR(50),
     typecode            CHAR(4),
     icao_operator       CHAR(3)                     REFERENCES dim_airline(icao),
@@ -219,7 +219,7 @@ CREATE TABLE fact_airport_delay (
     month_num           INTEGER             NOT NULL,
     month_mon           VARCHAR(30),
     flt_date            DATE                REFERENCES dim_date(date_id),
-    apt_icao            VARCHAR(4)             REFERENCES dim_airport(ident),
+    apt_icao            VARCHAR(4),         -- REFERENCES dim_airport(ident) entfernt (historische Flughäfen)
     apt_name            VARCHAR(150),
     state_name          VARCHAR(100),
     flt_arr_1           INTEGER,            -- Anzahl Ankünfte
@@ -244,8 +244,8 @@ CREATE TABLE fact_airport_delay (
     dly_apt_arr_v_1     NUMERIC(10,2),      -- V  Environmental Issues
     dly_apt_arr_w_1     NUMERIC(10,2),      -- W  Weather
     dly_apt_arr_na_1    NUMERIC(10,2),      -- NA Not regulated/Not specified
-    flt_arr_dly         INTEGER,            -- Anzahl verspäteter Ankünfte
-    flt_arr_dly_15      INTEGER,            -- Ankünfte mit >15 Min. Verspätung
+    flt_arr_1_dly         INTEGER,          -- Anzahl verspäteter Ankünfte
+    flt_arr_1_dly_15      INTEGER,          -- Ankünfte mit >15 Min. Verspätung
 
     PRIMARY KEY (apt_icao, flt_date)
 );
@@ -261,7 +261,7 @@ CREATE TABLE fact_airport_traffic (
     month_num           INTEGER             NOT NULL,
     month_mon           VARCHAR(30),
     flt_date            DATE                REFERENCES dim_date(date_id),
-    apt_icao            VARCHAR(4)          REFERENCES dim_airport(ident),
+    apt_icao            VARCHAR(4),         -- REFERENCES dim_airport(ident) entfernt (historische Flughäfen)
     apt_name            VARCHAR(150),
     state_name          VARCHAR(100),
 
@@ -320,7 +320,7 @@ CREATE TABLE fact_enroute_delay (
 -- Granularität: Flughafen × Stunde
 
 CREATE TABLE fact_weather (
-    apt_icao            VARCHAR(4)         REFERENCES dim_airport(ident),
+    apt_icao            VARCHAR(4),                 -- REFERENCES dim_airport(ident) entfernt (historische Flughäfen)
     ts_hour             TIMESTAMPTZ     NOT NULL,   -- UTC, auf volle Stunde gerundet
     wind_speed          NUMERIC(10,2),              -- km/h
     precipitation       NUMERIC(10,2),              -- mm
@@ -353,7 +353,7 @@ SELECT
     END
 FROM GENERATE_SERIES(
     '2011-01-01'::DATE,
-    '2026-12-31'::DATE,
+    '2028-12-31'::DATE,
     '1 day'::INTERVAL
 ) AS d;
 

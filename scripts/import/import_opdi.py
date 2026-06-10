@@ -25,7 +25,7 @@ with engine.connect() as conn:
 
 
 # Years to import
-YEARS_LIST = list(range(2022, 2027))            # Adjust based on available data time frame
+YEARS_LIST = list(range(2024, 2026))            # Adjust based on available data time frame
 MONTHS_LIST = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
 
 # Columns that may arrive as a native timestamp OR as an ISO string,
@@ -185,6 +185,48 @@ for y in YEARS_LIST:
     
     print(f"Saved: {output_path}")
 
-print("-- fact_flight_event finished --") 
+print("-- fact_flight_event finished --")    
     
+# -------------- Import fact_measurement -------------------------------------
+
+# -- Extract raw data --
+
+input_dir = "../../data/raw/opdi/measurements/"
+output_dir = "../../data/processed/opdi/measurements/"
+
+# Create the output folder if it does not exist yet
+os.makedirs(output_dir, exist_ok=True)
+
+for y in YEARS_LIST:
+    files = sorted(glob.glob(f"{input_dir}measurements_{y}*.parquet"))
+    
+    if not files:
+        print(f"WARNING: No files found for year {y} - skipped")
+        continue
+    
+
+    # during scripting, corrupt files turned up, which could not be fixed by re-downloading.
+    # Due to that, the try/except block was placed
+    # due to the high file size, the files will be placed in the db one after the other.
+    # RAM is freed
+    for i, file in enumerate(files):
+        try:
+            df_temp = pd.read_parquet(file, engine="fastparquet")
+            df_temp = df_temp.drop(columns=["version"], errors="ignore")
+            
+            if_exists_mode = "replace" if (y == YEARS_LIST[0] and i == 0) else "append"
+            df_temp.to_sql("fact_measurement", engine, if_exists=if_exists_mode, index=False)
+            
+            print(f"Loaded: {file}")
+            
+        except Exception as e:
+            print(f"CORRUPT: {file} → {e}")
+            continue
+        
+        finally:
+            if 'df_temp' in dir():
+                del df_temp
+
+print("-- fact_measurement finished --") 
+
     

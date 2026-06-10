@@ -321,7 +321,7 @@ CREATE TABLE fact_enroute_delay (
 
 CREATE TABLE fact_weather (
     apt_icao            VARCHAR(4),                 -- REFERENCES dim_airport(ident) entfernt (historische Flughäfen)
-    ts_hour             TIMESTAMPTZ     NOT NULL,   -- UTC, auf volle Stunde gerundet
+    ts_hour             TIMESTAMP       NOT NULL,   -- UTC, auf volle Stunde gerundet
     wind_speed          NUMERIC(10,2),              -- km/h
     precipitation       NUMERIC(10,2),              -- mm
     temperature         NUMERIC(10,2),              -- °C

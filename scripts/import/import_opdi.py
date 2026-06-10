@@ -1,11 +1,31 @@
 import pandas as pd
 import os
+from sqlalchemy import create_engine, text
+from dotenv import load_dotenv
+import glob
+from collections import defaultdict
 
 # Set the working directory to the folder containing this script
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
+
+# Load .env file
+load_dotenv()
+DB_URL = os.getenv('DATABASE_URL')
+engine = create_engine(DB_URL)
+
+
+# Empty fact tables that reference opdi
+######################### needs to be updated #########################
+with engine.connect() as conn:
+    conn.execute(text("TRUNCATE TABLE dim_date RESTART IDENTITY CASCADE;"))
+    conn.execute(text("TRUNCATE TABLE dim_airport RESTART IDENTITY CASCADE;"))
+    conn.execute(text("TRUNCATE TABLE dim_airline RESTART IDENTITY CASCADE;"))
+    conn.commit()
+
+
 # Years to import
-YEARS_LIST = list(range(2022, 2027))
+YEARS_LIST = list(range(2022, 2027))            # Adjust based on available data time frame
 MONTHS_LIST = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
 
 # Columns that may arrive as a native timestamp OR as an ISO string,
@@ -108,3 +128,63 @@ df_total = pd.concat(df_years, ignore_index=True)
 output_path_total = f"{output_dir}flight_list_total.parquet"
 df_total.to_parquet(output_path_total, engine="pyarrow", compression="snappy", index=False)
 print(f"Exported {output_path_total} ({len(df_total):,} rows)")
+
+# -- Load --
+
+df_total.to_sql("fact_flight", engine, if_exists='append', index=False)
+print("-- fact_flight finished --")
+
+
+
+# -------------- Import fact_flight_event -------------------------------------
+
+# -- Extract raw data --
+
+input_dir = "../../data/raw/opdi/flight_events/"
+output_dir = "../../data/processed/opdi/flight_events/"
+
+# Create the output folder if it does not exist yet
+os.makedirs(output_dir, exist_ok=True)
+
+# Define the types of column ["type"] which to keep in the final df
+TYPES_TO_KEEP = [
+    "first_seen",
+    "last_seen",
+    "take-off",
+    "landing"
+]
+
+for y in YEARS_LIST:
+    files = sorted(glob.glob(f"{input_dir}flight_events_{y}*.parquet"))
+    
+    if not files:
+        print(f"WARNING: No files found for year {y} - skipped")
+        continue
+    
+    # temporary df to modify and drop columns and rows before concat 
+    dfs = []
+    for file in files:
+        df_temp = pd.read_parquet(file)
+        df_temp = df_temp.drop(
+        columns=["source", "version"],
+        errors="ignore"
+        )                          
+        df_temp = df_temp[df_temp["type"].isin(TYPES_TO_KEEP)]  
+        df_temp["event_time"] = pd.to_datetime(df_temp["event_time"])
+        df_temp["event_date"] = df_temp["event_time"].dt.normalize()
+        df_temp["event_time"] = df_temp["event_time"].dt.strftime("%H:%M:%S")
+        dfs.append(df_temp)
+    
+    df_total2 = pd.concat(dfs, ignore_index=True)
+    
+    output_path = os.path.join(output_dir, f"flight_events_{y}.parquet")
+    df_total2.to_parquet(output_path, index=False)
+    
+    # -- Load --
+    df_total2.to_sql("fact_flight_event", engine, if_exists='append', index=False)
+    
+    print(f"Saved: {output_path}")
+
+print("-- fact_flight_event finished --") 
+    
+    

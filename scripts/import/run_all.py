@@ -8,7 +8,7 @@ scripts = [
     "import_dimensions.py",
     "import_eurocontrol.py",
     "import_weather.py",
-    # "import_opdi.py",  # TODO [Sebastian]
+    # "import_opdi.py",         # TODO [Sebastian]
 ]
 
 for script in scripts:

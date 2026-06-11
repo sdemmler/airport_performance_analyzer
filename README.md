@@ -51,13 +51,11 @@ Python · postgresSQL · docker · pandas · streamlit · scikit-learn · xgboos
 
 ---
 
-## 🚀 Setup
+## 🚀 PostgreSQL Setup
 
-# Postgres DB
+# Guide for Linux (Ubuntu/Debian)
 
-# PostgreSQL Setup Guide
-
-## 1. Installation
+1. Installation of Server
 
 ```bash
 sudo apt update && sudo apt install postgresql postgresql-client
@@ -65,52 +63,21 @@ sudo apt update && sudo apt install postgresql postgresql-client
 
 ---
 
-## 2. User und Datenbank anlegen
+2. User and db name setup incl. setting permissions and installation of dependencies
 
 ```bash
-sudo -u postgres psql -c "CREATE USER meinuser WITH PASSWORD 'meinpasswort';"
-sudo -u postgres createdb -O meinuser abschluss_lokal
+chmod +x db_setup_debian.sh
+./db_setup_debian.sh
 ```
+
+# Guide for Windows
+
+1. Installation of Server
 
 ---
 
-## 3. Schema einlesen und Berechtigungen vergeben
 
-```bash
-sudo -u postgres psql -d abschluss_lokal -f database/setup.sql
-sudo -u postgres psql -d abschluss_lokal -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO meinuser;"
-sudo -u postgres psql -d abschluss_lokal -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO meinuser;"
-```
-
----
-
-## 4. `.env` Datei
-
-Die `.env` muss im gleichen Verzeichnis wie die Import-Skripte abgelegt werden:
-
-```
-scripts/import/.env
-```
-
-Inhalt:
-
-```env
-DATABASE_URL=postgresql://meinuser:meinpasswort@localhost:5432/abschluss_lokal
-```
-
-> `meinuser` und `meinpasswort` durch eigene Werte ersetzen – müssen in Schritt 2 und der `.env` übereinstimmen.
-
----
-
-## 5. Python Dependencies installieren
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
----
+2. tbc
 
 ## 👥 Team
 

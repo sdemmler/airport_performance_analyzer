@@ -7,8 +7,8 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 scripts = [
     "import_dimensions.py",
     "import_eurocontrol.py",
-    "import_weather.py",
-    "import_opdi.py"
+    "import_weather.py"#,
+    #"import_opdi.py"
 ]
 
 for script in scripts:

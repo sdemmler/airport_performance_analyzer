@@ -12,22 +12,22 @@ BEGIN;
 -- ============================================================
 
 -- ── Faktentabellen ──────────────────────────────────────────
-DROP TABLE IF EXISTS fact_weather;
-DROP TABLE IF EXISTS fact_enroute_delay;
-DROP TABLE IF EXISTS fact_airport_traffic;
-DROP TABLE IF EXISTS fact_airport_delay;
-DROP TABLE IF EXISTS fact_measurement;
-DROP TABLE IF EXISTS fact_flight_event;
-DROP TABLE IF EXISTS fact_flight;
+DROP TABLE IF EXISTS fact_weather CASCADE;
+DROP TABLE IF EXISTS fact_enroute_delay CASCADE;
+DROP TABLE IF EXISTS fact_airport_traffic CASCADE;
+DROP TABLE IF EXISTS fact_airport_delay CASCADE;
+DROP TABLE IF EXISTS fact_measurement CASCADE;
+DROP TABLE IF EXISTS fact_flight_event CASCADE;
+DROP TABLE IF EXISTS fact_flight CASCADE;
 
 -- ── Dimensionstabellen ──────────────────────────────────────
-DROP TABLE IF EXISTS dim_school_holidays;
-DROP TABLE IF EXISTS dim_public_holidays;
-DROP TABLE IF EXISTS dim_entity_region;
-DROP TABLE IF EXISTS dim_airline;
-DROP TABLE IF EXISTS dim_date;
-DROP TABLE IF EXISTS dim_runway;
-DROP TABLE IF EXISTS dim_airport;
+DROP TABLE IF EXISTS dim_school_holidays CASCADE;
+DROP TABLE IF EXISTS dim_public_holidays CASCADE;
+DROP TABLE IF EXISTS dim_entity_region CASCADE;
+DROP TABLE IF EXISTS dim_airline CASCADE;
+DROP TABLE IF EXISTS dim_date CASCADE;
+DROP TABLE IF EXISTS dim_runway CASCADE;
+DROP TABLE IF EXISTS dim_airport CASCADE;
 
 
 -- ============================================================
@@ -165,15 +165,15 @@ CREATE TABLE dim_school_holidays (
 -- Link: https://www.opdi.aero/flight-list-data.html
 
 CREATE TABLE fact_flight (
-    id                  BIGINT          PRIMARY KEY,
+    id                  NUMERIC(20)     PRIMARY KEY,
     icao24              CHAR(6)         NOT NULL,
     flt_id              VARCHAR(10),
     dof                 DATE            NOT NULL    REFERENCES dim_date(date_id),
-    adep                VARCHAR(4)                  REFERENCES dim_airport(ident),
-    ades                VARCHAR(4)                  REFERENCES dim_airport(ident),
+    adep                VARCHAR(10),                 -- REFERENCES dim_airport(ident) (constraint removed: includes non european airports)
+    ades                VARCHAR(10),                 -- REFERENCES dim_airport(ident) (constraint removed: includes non european airports)
     model               VARCHAR(50),
-    typecode            CHAR(4),
-    icao_operator       CHAR(3)                     REFERENCES dim_airline(icao),
+    typecode            VARCHAR(50),
+    icao_operator       VARCHAR(10),                -- REFERENCES dim_airline(icao) (constraint removed: not all operator codes exist in dim_airline)
     first_seen_date     DATE,
     first_seen_time     TIME,
     last_seen_date      DATE,
@@ -186,9 +186,9 @@ CREATE TABLE fact_flight (
 -- Link: https://www.opdi.aero/flight-event-data.html
 
 CREATE TABLE fact_flight_event (
-    id                  BIGINT          PRIMARY KEY,
-    flight_id           BIGINT          NOT NULL    REFERENCES fact_flight(id),
-    type                VARCHAR(20)     NOT NULL,
+    id                  TEXT            PRIMARY KEY,
+    flight_id           NUMERIC(20)     NOT NULL,--    TODO: Im finalen Lauf wieder hinzufügen: REFERENCES fact_flight(id),
+    type                VARCHAR(60)     NOT NULL,
     event_date          DATE            NOT NULL    REFERENCES dim_date(date_id),
     event_time          TIME            NOT NULL,
     longitude           DECIMAL         NOT NULL,
@@ -202,8 +202,8 @@ CREATE TABLE fact_flight_event (
 -- Link: https://www.opdi.aero/measurement-data.html
 
 CREATE TABLE fact_measurement (
-    id                  BIGINT     PRIMARY KEY,
-    event_id            BIGINT     NOT NULL    REFERENCES fact_flight_event(id),
+    id                  TEXT            PRIMARY KEY,
+    event_id            TEXT            NOT NULL,    -- REFERENCES fact_flight_event(id) (fact_flight_events does not include all events)
     type                VARCHAR(50),
     value               DECIMAL
 );

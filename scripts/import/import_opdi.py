@@ -1,9 +1,10 @@
 import pandas as pd
 import os
+import glob
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
-import glob
 from collections import defaultdict
+from io import StringIO
 
 # Set the working directory to the folder containing this script
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -15,17 +16,16 @@ DB_URL = os.getenv('DATABASE_URL')
 engine = create_engine(DB_URL)
 
 
-# Empty fact tables that reference opdi
-######################### needs to be updated #########################
+# Empty fact tables
 with engine.connect() as conn:
-    conn.execute(text("TRUNCATE TABLE dim_date RESTART IDENTITY CASCADE;"))
-    conn.execute(text("TRUNCATE TABLE dim_airport RESTART IDENTITY CASCADE;"))
-    conn.execute(text("TRUNCATE TABLE dim_airline RESTART IDENTITY CASCADE;"))
+    conn.execute(text("TRUNCATE TABLE fact_flight RESTART IDENTITY CASCADE;"))
+    conn.execute(text("TRUNCATE TABLE fact_flight_event RESTART IDENTITY CASCADE;"))
+    conn.execute(text("TRUNCATE TABLE fact_measurement RESTART IDENTITY CASCADE;"))
     conn.commit()
 
 
 # Years to import
-YEARS_LIST = list(range(2024, 2026))            # Adjust based on available data time frame
+YEARS_LIST = list(range(2022, 2027))
 MONTHS_LIST = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
 
 # Columns that may arrive as a native timestamp OR as an ISO string,
@@ -35,6 +35,27 @@ TIME_COLS = ["dof", "first_seen", "last_seen"]
 # and unix_time is missing in newer files. Cast each month to nullable Int64
 # BEFORE concat so a uint64/int64 mix can't force a lossy float64 upcast.
 INT_COLS = ["id", "unix_time"]
+
+# Function to copy data with in-memory-buffer 
+def copy_to_sql(df, table, engine):
+    
+    # create in-memory-buffer
+    buffer = StringIO()
+    df.to_csv(buffer, index=False, header=False, sep="\t")
+    
+    # Reset buffer cursor to the beginning
+    buffer.seek(0)
+    
+    # Extract raw psycopg2 connection from SQLAlchemy engine
+    with engine.connect() as conn:
+        dbapi_conn = conn.connection
+        
+        with dbapi_conn.cursor() as cursor:
+            # Bulk load via PostgreSQL COPY
+            # sep="," matches CSV format, null="" maps empty fields to NULL
+            cursor.copy_from(buffer, table, sep="\t", null="")
+        
+        dbapi_conn.commit()
 
 
 # -------------- Import fact_flight -------------------------------------
@@ -126,12 +147,23 @@ for y in YEARS_LIST:
 df_total = pd.concat(df_years, ignore_index=True)
 
 output_path_total = f"{output_dir}flight_list_total.parquet"
+
+# Remove duplicates
+df_total = df_total.drop_duplicates(subset=["id"], keep="first")
+
+# Clean string columns (remove tabs and commas that break COPY)
+str_cols = df_total.select_dtypes(include="object").columns
+df_total[str_cols] = df_total[str_cols].apply(
+    lambda col: col.str.replace("\t", " ", regex=False)
+                   .str.replace(",", " ", regex=False)
+)
+
 df_total.to_parquet(output_path_total, engine="pyarrow", compression="snappy", index=False)
 print(f"Exported {output_path_total} ({len(df_total):,} rows)")
 
 # -- Load --
 
-df_total.to_sql("fact_flight", engine, if_exists='append', index=False)
+copy_to_sql(df_total, "fact_flight", engine)
 print("-- fact_flight finished --")
 
 
@@ -148,10 +180,14 @@ os.makedirs(output_dir, exist_ok=True)
 
 # Define the types of column ["type"] which to keep in the final df
 TYPES_TO_KEEP = [
-    "first_seen",
-    "last_seen",
     "take-off",
-    "landing"
+    "landing",
+    "entry-runway",
+    "exit-runway",
+    "exit-parking_position",
+    "entry-parking_position",
+    "top-of-climb",
+    "top-of-descent"
 ]
 
 for y in YEARS_LIST:
@@ -179,11 +215,18 @@ for y in YEARS_LIST:
     
     output_path = os.path.join(output_dir, f"flight_events_{y}.parquet")
     df_total2.to_parquet(output_path, index=False)
+
+    # Drop info column
+    df_total2 = df_total2.drop(columns=["info"])
+
+    # Reorder columns to match setup.sql
+    df_total2 = df_total2[["id", "flight_id", "type", "event_date", "event_time", "longitude", "latitude", "altitude"]]
+    
     
     # -- Load --
-    df_total2.to_sql("fact_flight_event", engine, if_exists='append', index=False)
     
-    print(f"Saved: {output_path}")
+    copy_to_sql(df_total2, "fact_flight_event", engine)
+    print(f"Loaded: {output_path}")
 
 print("-- fact_flight_event finished --")    
     
@@ -211,12 +254,11 @@ for y in YEARS_LIST:
     # RAM is freed
     for i, file in enumerate(files):
         try:
-            df_temp = pd.read_parquet(file, engine="fastparquet")
+            df_temp = pd.read_parquet(file, engine="pyarrow")
             df_temp = df_temp.drop(columns=["version"], errors="ignore")
             
-            if_exists_mode = "replace" if (y == YEARS_LIST[0] and i == 0) else "append"
-            df_temp.to_sql("fact_measurement", engine, if_exists=if_exists_mode, index=False)
-            
+            print(f"Loading: {file} ({len(df_temp)} rows)...")
+            copy_to_sql(df_temp, "fact_measurement", engine)           
             print(f"Loaded: {file}")
             
         except Exception as e:

@@ -57,7 +57,7 @@ def copy_to_sql(df, table, engine):
         
         dbapi_conn.commit()
 
-"""
+
 # -------------- Import fact_flight -------------------------------------
 
 # -- Extract raw data --
@@ -173,7 +173,7 @@ for i in range(0, len(df_total), CHUNK_SIZE):
 del df_total
 print("-- fact_flight finished --")
 
-"""
+
 
 # -------------- Import fact_flight_event -------------------------------------
 

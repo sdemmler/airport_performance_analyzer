@@ -165,15 +165,15 @@ CREATE TABLE dim_school_holidays (
 -- Link: https://www.opdi.aero/flight-list-data.html
 
 CREATE TABLE fact_flight (
-    id                  NUMERIC(20)     PRIMARY KEY,
+    id                  TEXT            PRIMARY KEY,
     icao24              CHAR(6)         NOT NULL,
     flt_id              VARCHAR(10),
     dof                 DATE            NOT NULL    REFERENCES dim_date(date_id),
     adep                VARCHAR(10),                 -- REFERENCES dim_airport(ident) (constraint removed: includes non european airports)
     ades                VARCHAR(10),                 -- REFERENCES dim_airport(ident) (constraint removed: includes non european airports)
-    model               VARCHAR(50),
+    model               VARCHAR(100),
     typecode            VARCHAR(50),
-    icao_operator       VARCHAR(10),                -- REFERENCES dim_airline(icao) (constraint removed: not all operator codes exist in dim_airline)
+    icao_operator       VARCHAR(100),                -- REFERENCES dim_airline(icao) (constraint removed: not all operator codes exist in dim_airline)
     first_seen_date     DATE,
     first_seen_time     TIME,
     last_seen_date      DATE,
@@ -187,7 +187,7 @@ CREATE TABLE fact_flight (
 
 CREATE TABLE fact_flight_event (
     id                  TEXT            PRIMARY KEY,
-    flight_id           NUMERIC(20)     NOT NULL,--    TODO: Im finalen Lauf wieder hinzufügen: REFERENCES fact_flight(id),
+    flight_id           TEXT            NOT NULL,--    TODO: Im finalen Lauf wieder hinzufügen: REFERENCES fact_flight(id),
     type                VARCHAR(60)     NOT NULL,
     event_date          DATE            NOT NULL    REFERENCES dim_date(date_id),
     event_time          TIME            NOT NULL,

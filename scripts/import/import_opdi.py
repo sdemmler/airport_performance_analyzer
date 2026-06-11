@@ -57,7 +57,7 @@ def copy_to_sql(df, table, engine):
         
         dbapi_conn.commit()
 
-
+"""
 # -------------- Import fact_flight -------------------------------------
 
 # -- Extract raw data --
@@ -163,10 +163,17 @@ print(f"Exported {output_path_total} ({len(df_total):,} rows)")
 
 # -- Load --
 
-copy_to_sql(df_total, "fact_flight", engine)
+CHUNK_SIZE = 500000
+
+for i in range(0, len(df_total), CHUNK_SIZE):
+    chunk = df_total.iloc[i:i+CHUNK_SIZE]
+    copy_to_sql(chunk, "fact_flight", engine)
+    print(f"Loaded rows {i} to {i+len(chunk)} to fact_flight")
+
+del df_total
 print("-- fact_flight finished --")
 
-
+"""
 
 # -------------- Import fact_flight_event -------------------------------------
 
@@ -212,20 +219,28 @@ for y in YEARS_LIST:
         dfs.append(df_temp)
     
     df_total2 = pd.concat(dfs, ignore_index=True)
+    df_total2["id"] = df_total2["id"].astype(str)
+    df_total2["flight_id"] = df_total2["flight_id"].astype(str)
     
-    output_path = os.path.join(output_dir, f"flight_events_{y}.parquet")
-    df_total2.to_parquet(output_path, index=False)
-
     # Drop info column
     df_total2 = df_total2.drop(columns=["info"])
 
     # Reorder columns to match setup.sql
     df_total2 = df_total2[["id", "flight_id", "type", "event_date", "event_time", "longitude", "latitude", "altitude"]]
     
+    output_path = os.path.join(output_dir, f"flight_events_{y}.parquet")
+    df_total2.to_parquet(output_path, index=False)
     
     # -- Load --
     
-    copy_to_sql(df_total2, "fact_flight_event", engine)
+    CHUNK_SIZE = 500000
+    
+    for i in range(0, len(df_total2), CHUNK_SIZE):
+        chunk = df_total2.iloc[i:i+CHUNK_SIZE]
+        copy_to_sql(chunk, "fact_flight_event", engine)
+    
+    del df_total2, dfs
+    
     print(f"Loaded: {output_path}")
 
 print("-- fact_flight_event finished --")    

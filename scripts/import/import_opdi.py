@@ -244,7 +244,13 @@ for y in YEARS_LIST:
     print(f"Loaded: {output_path}")
 
 print("-- fact_flight_event finished --")    
-    
+
+
+"""
+# NOTE: fact_measurement is not currently required (outside the project scope). 
+# The import logic remains commented out/unchanged for the time being, 
+# in case the scope needs to be redefined at a later date.
+
 # -------------- Import fact_measurement -------------------------------------
 
 # -- Extract raw data --
@@ -286,4 +292,4 @@ for y in YEARS_LIST:
 
 print("-- fact_measurement finished --") 
 
-    
+"""
